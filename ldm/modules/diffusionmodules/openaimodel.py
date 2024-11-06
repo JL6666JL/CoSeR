@@ -124,7 +124,7 @@ class TimestepEmbedSequential(nn.Sequential, TimestepBlock):
     A sequential module that passes timestep embeddings to the children that
     support it as an extra input.
     """
-
+    # lr_prompt是 cognitive embedding
     def forward(self, x, emb, context=None, lr=None, lr_prompt=None, struct_cond=None, reference=None, gen_mode=False):
         for layer in self:
             if isinstance(layer, TimestepBlock):
@@ -1136,6 +1136,8 @@ class UNetModelAiA(nn.Module):
                     else:
                         disabled_sa = False
 
+                    # use_spatial_transformer:True
+                    # input_blocks用的是SpatialTransformerV2d4
                     if not exists(num_attention_blocks) or nr < num_attention_blocks[level]:
                         layers.append(
                             AttentionBlock(
@@ -1186,6 +1188,9 @@ class UNetModelAiA(nn.Module):
         if legacy:
             #num_heads = 1
             dim_head = ch // num_heads if use_spatial_transformer else num_head_channels
+        
+
+        # middle_block用的是SpatialTransformerV8_refV5
         self.middle_block = TimestepEmbedSequential(
             ResBlock(
                 ch,
@@ -1217,6 +1222,7 @@ class UNetModelAiA(nn.Module):
         )
         self._feature_size += ch
 
+        # output_blocks用的是SpatialTransformerV8_refV5
         self.output_blocks = nn.ModuleList([])
         for level, mult in list(enumerate(channel_mult))[::-1]:
             for i in range(self.num_res_blocks[level] + 1):
@@ -1343,7 +1349,7 @@ class UNetModelAiA(nn.Module):
         if self.num_classes is not None:
             assert y.shape == x.shape[0]
             emb = emb + self.label_emb(y)
-
+        # 原始代码中gen_mode为False，if条件为True
         if not gen_mode:
             lr_condition = condition['struct']
             lr_condition_mid = lr_condition.pop()
@@ -1353,6 +1359,7 @@ class UNetModelAiA(nn.Module):
             ref_condition_mid = ref_condition.pop()
             ref_condition_dec = ref_condition
             
+            # condition['prompt_emb']:caption   condition['lr_prompt_emb']:cognitive embedding  
             h = x.type(self.dtype)
             for module in self.input_blocks:
                 h = module(h, emb, condition['prompt_emb'], lr_prompt=condition['lr_prompt_emb'])
@@ -1640,7 +1647,6 @@ class ControlNet(nn.Module):
         outs.append(self.middle_block_out(h, emb, context, lr_prompt=lr_prompt))
 
         return outs
-
 
 class EncoderUNetModelWT(nn.Module):
     """

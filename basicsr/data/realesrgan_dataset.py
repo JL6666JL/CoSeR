@@ -425,7 +425,6 @@ class RealESRGANCapRefDataset(data.Dataset):
         # -------------------------------- Load gt images -------------------------------- #
         # Shape: (h, w, c); channel order: BGR; image range: [0, 1], float32.
         gt_path = self.paths[index]
-
         # generate caption
         image_name = gt_path.split('/')[-1]
         class_num = image_name.split('_')[0]
@@ -565,6 +564,9 @@ class RealESRGANCapRefDataset(data.Dataset):
         kernel2 = torch.FloatTensor(kernel2)
 
         return_d = {'gt': img_gt, 'kernel1': kernel, 'kernel2': kernel2, 'sinc_kernel': sinc_kernel, 'gt_path': gt_path, 'caption': caption, 'ref': img_ref}
+        # return return_d
+
+
         return return_d
 
     def __len__(self):

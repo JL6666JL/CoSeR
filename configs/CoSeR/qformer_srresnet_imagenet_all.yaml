@@ -82,7 +82,7 @@ data:
       target: basicsr.data.realesrgan_dataset.RealESRGANCapRefDataset
       params:
         queue_size: 180
-        gt_path: PATH_FOR_GT
+        gt_path: /data1/jianglei/coser_imagenet-1K_new
         meta_info: data/ImageNet/Obj512_all/train.txt
         caption_path: data/ImageNet/Obj512_all/blip2_imagenet_captions_all.json
         reference_path: data/ImageNet/Obj512_all/imagenet_all_clipcls.pkl
@@ -111,15 +111,16 @@ data:
 
         final_sinc_prob: 0.8
 
-        gt_size: 512
+        gt_size: 512 
         use_hflip: True
+        # use_hflip: False
         use_rot: False
         
     validation:
       target: basicsr.data.paired_image_dataset.PairedImageCapRefDataset
       params:
-        dataroot_gt: PATH_FOR_GT
-        dataroot_lq: PATH_FOR_LR
+        dataroot_gt: /data1/jianglei/coser_imagenet-1K_new
+        dataroot_lq: /data1/jianglei/coser_imagenet-1K_new_lr
         meta_info: data/ImageNet/Obj512_all/val.txt
         caption_path: data/ImageNet/Obj512_all/blip2_imagenet_captions_all.json
         reference_path: data/ImageNet/Obj512_all/imagenet_all_clipcls.pkl

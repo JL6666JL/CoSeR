@@ -14,7 +14,8 @@ result_name = "data/ImageNet/Obj512_all/imagenet_all_clipcls.pkl"
 feature_name = "data/ImageNet/Obj512_all/imagenet_all_clipcls_feature.npy"
 
 layer_weights = {'conv1_2': 0.1, 'conv2_2': 0.1, 'conv3_4': 1, 'conv4_4': 1, 'conv5_4': 1}
-model, preprocess = open_clip.create_model_and_transforms('ViT-H-14', pretrained='laion2b_s32b_b79k', device=torch.device("cuda"))
+# model, preprocess = open_clip.create_model_and_transforms('ViT-H-14', pretrained='laion2b_s32b_b79k', device=torch.device("cuda"))
+model, _,preprocess = open_clip.create_model_and_transforms('ViT-H-14', pretrained='laion2b_s32b_b79k', device=torch.device("cuda"))
 tokenizer = open_clip.get_tokenizer('ViT-H-14')
 
 paths = []
@@ -25,6 +26,7 @@ with open('data/ImageNet/Obj512_all/all.txt') as fin:
 feature_list = []
 # feature_list_numpy = []
 for path in tqdm(paths):
+    path = '/data1/jianglei/coser_imagenet-1K/'+path
     filename = path.split("/")[-1]
     classname = filename.split("_")[0]
     image = preprocess(Image.open(path)).unsqueeze(0)
@@ -54,19 +56,21 @@ for i in range(len(paths)):
 feature_df = pd.DataFrame(feature_list)
 feature_df.set_index([1], inplace=True)
 
+
 df = pd.read_table('data/ImageNet/class.txt', sep='\t', header=None)
 class_list = list(df[1])
 
 sim_dict = {}
 for class_name in tqdm(class_list):
-    class_feature_df = feature_df.loc[class_name]
-    class_image_names = list(class_feature_df[0])
-    
-    class_feature_all = torch.Tensor(np.array(class_feature_df[2].tolist())).to("cuda", torch.float32)
-    class_feature_all /= class_feature_all.norm(dim=-1, keepdim=True)
-    class_loss = class_feature_all @ class_feature_all.T
+    if class_name in feature_df.index:
+        class_feature_df = feature_df.loc[class_name]
+        class_image_names = list(class_feature_df[0])
+        
+        class_feature_all = torch.Tensor(np.array(class_feature_df[2].tolist())).to("cuda", torch.float32)
+        class_feature_all /= class_feature_all.norm(dim=-1, keepdim=True)
+        class_loss = class_feature_all @ class_feature_all.T
 
-    sim_dict[class_name] = {'filename': class_image_names, 'loss': class_loss.cpu().detach().numpy()}
+        sim_dict[class_name] = {'filename': class_image_names, 'loss': class_loss.cpu().detach().numpy()}
 
 with open(result_name, 'wb') as tf:
     pickle.dump(sim_dict, tf)

@@ -489,7 +489,7 @@ if __name__ == "__main__":
     parser = get_parser()
     parser = Trainer.add_argparse_args(parser)
 
-    opt, unknown = parser.parse_known_args()
+    opt, unknown = parser.parse_known_args()    # Pass in parameters that are not defined
     if opt.name and opt.resume:
         raise ValueError(
             "-n/--name and -r/--resume cannot be specified both."

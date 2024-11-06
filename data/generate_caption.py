@@ -7,7 +7,9 @@ from tqdm import tqdm
 import open_clip
 
 
-input_path = ""  # path for HR
+# input_path = "/data1/jianglei/coser_imagenet"  # path for HR
+# input_path = "/data1/jianglei/coser_imagenet_10"  # path for HR
+input_path = "/data1/jianglei/coser_imagenet-1K"  # path for HR
 
 name_list = []
 with open(f"data/ImageNet/Obj512_all/all.txt", 'r') as f:
@@ -21,7 +23,8 @@ processor = AutoProcessor.from_pretrained("Salesforce/blip2-opt-2.7b")
 model = Blip2ForConditionalGeneration.from_pretrained("Salesforce/blip2-opt-2.7b")
 torch_dtype=torch.float16
 device = "cuda" if torch.cuda.is_available() else "cpu"
-model.to(device)
+# model = torch.nn.DataParallel(model)
+model.to(device,dtype=torch.float16)
 
 clip_model, _, preprocess = open_clip.create_model_and_transforms('ViT-H-14', pretrained='laion2b_s32b_b79k', device=torch.device("cuda"))
 tokenizer = open_clip.get_tokenizer('ViT-H-14')
@@ -39,7 +42,7 @@ for name in tqdm(name_list):
     generated_text = generated_text.lower().replace('.', ',').rstrip(',')
     caption1 = generated_text
 
-    prompt = "a photo of"
+    prompt = "a photo of" 
     inputs = processor(image, text=prompt, return_tensors="pt").to(device, torch.float16)
     generated_ids = model.generate(**inputs, max_new_tokens=20)
     generated_text = processor.batch_decode(generated_ids, skip_special_tokens=True)[0].strip()

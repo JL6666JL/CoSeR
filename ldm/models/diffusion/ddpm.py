@@ -1635,6 +1635,7 @@ class LatentDiffusionCogSR(DDPM):
         self.clip_denoised = False
         self.bbox_tokenizer = None
 
+        # 将图像调整为适合clip输入的格式
         self.clip_transfrom = transforms.Compose(
             [
                 transforms.Resize(
@@ -2523,6 +2524,7 @@ class LatentDiffusionCogSR(DDPM):
         return loss
 
     def forward(self, x, c, gt, ref, *args, **kwargs):
+
         index = np.random.randint(0, self.num_timesteps, size=x.size(0))
         t = torch.from_numpy(index)
         t = t.to(self.device).long()
@@ -2535,23 +2537,26 @@ class LatentDiffusionCogSR(DDPM):
             if self.cond_stage_trainable:
                 c = self.get_learned_conditioning(c)
             else:
-                c, tokens = self.cond_stage_model(c)
+                c, tokens = self.cond_stage_model(c)    # 在原始配置中只跑这一句，把caption经过clip进行编码
             if self.shorten_cond_schedule:  # TODO: drop this option
                 print(s)
                 tc = self.cond_ids[t].to(self.device)
                 c = self.q_sample(x_start=c, t=tc, noise=torch.randn_like(c.float()))
 
         # clip image embedding
-        image_c = self.pre_sr_model(self.lq_clip)
+        image_c = self.pre_sr_model(self.lq_clip)  # 先用垃圾一点的预训练超分模型超分一下
         gt_resize = F.interpolate((self.gt+1.0)/2, size=(image_c.size(-2), image_c.size(-1)), mode='bicubic')
         pre_sr_loss = (gt_resize - image_c).abs().mean()
+
+        # cond_stage_model是FrozenOpenCLIPImageTokenEmbedder，也就是CLIP，用CLIP的视觉编码器(ViT)进行编码
         image_features = self.cond_stage_model.encode_with_vision_transformer(self.clip_transfrom(image_c))
 
         # cognitive embedding
+        # 在cognitive encoder已经预训练好的时候，self.global_adapter_optimize=Flase
         if self.global_adapter_optimize:
             cog_emb, clip_adapt_loss = self.global_adapter(image_features, c, tokens)
         else:
-            cog_emb = self.global_adapter(image_features)
+            cog_emb = self.global_adapter(image_features)   # 获得image的cognitive embedding
             clip_adapt_loss = 0
 
         if random.random() < self.drop_rate:
@@ -2559,6 +2564,8 @@ class LatentDiffusionCogSR(DDPM):
             c, _ = self.cond_stage_model(text)
 
         condition_dic = {'prompt_emb': c, 'lr_prompt_emb': cog_emb, 'reference': ref}
+
+        # condition_dic['lr_prompt_emb'] = 111 # 用来确认是不是已经完全没有再使用cognitive embedding了
 
         return self.p_losses(gt, condition_dic, t, t_ori, x, pre_sr_loss, clip_adapt_loss, *args, **kwargs)
 
@@ -2602,7 +2609,6 @@ class LatentDiffusionCogSR(DDPM):
 
         return self.p_losses(gt, condition_dic, t, t_ori, x, pre_sr_loss, clip_adapt_loss, *args, **kwargs)
 
-
     def _rescale_annotations(self, bboxes, crop_coordinates):  # TODO: move to dataset
         def rescale_bbox(bbox):
             x0 = clamp((bbox[0] - crop_coordinates[0]) / crop_coordinates[2])
@@ -2614,7 +2620,8 @@ class LatentDiffusionCogSR(DDPM):
         return [rescale_bbox(b) for b in bboxes]
 
     def apply_model(self, x_noisy, t, cond, return_ids=False, gen_mode=False):
-
+        
+        # self.model是DiffusionWrapper，就是unet部分
         x_recon = self.model(x_noisy, t, cond, gen_mode)
 
         if isinstance(x_recon, tuple) and not return_ids:
@@ -2640,9 +2647,10 @@ class LatentDiffusionCogSR(DDPM):
         kl_prior = normal_kl(mean1=qt_mean, logvar1=qt_log_variance, mean2=0.0, logvar2=0.0)
         return mean_flat(kl_prior) / np.log(2.0)
 
+    # x_start是HR图像，z_gt是LR图像(这里的gt是从扩散模型的角度出发的)
     def p_losses(self, x_start, condition_dic, t, t_ori, z_gt, pre_sr_loss, clip_adapt_loss, noise=None):
-        noise = default(noise, lambda: torch.randn_like(x_start))
-        x_noisy = self.q_sample(x_start=x_start, t=t, noise=noise)
+        noise = default(noise, lambda: torch.randn_like(x_start))   # noise为None的时候生成随机噪声
+        x_noisy = self.q_sample(x_start=x_start, t=t, noise=noise)  # 生成第t步的噪声
 
         if self.mix_ratio > 0:
             if random.random() < self.mix_ratio:
@@ -2650,11 +2658,16 @@ class LatentDiffusionCogSR(DDPM):
                 noise = noise_new * 0.5 + noise * 0.5
                 x_noisy = self.q_sample(x_start=x_start, t=t, noise=noise)
 
+        # self.structcond_stage_model是ControlNet
+        # struct_c通过把LR图像输入到ControlNet中得到结构信息
         struct_c = self.structcond_stage_model(x_noisy, z_gt, t_ori, condition_dic['prompt_emb'], lr_prompt=condition_dic['lr_prompt_emb'])
+        # reference_c通过把reference图像输入到ControlNet得到reference的信息
         reference_c = self.structcond_stage_model(x_noisy, condition_dic['reference'], t_ori, condition_dic['prompt_emb'], lr_prompt=condition_dic['lr_prompt_emb'])
 
         condition_dic['struct'] = struct_c
         condition_dic['ref_struct'] = reference_c
+
+        # apply_model就是跑unet部分，在这里面有很多attention部分
         model_output = self.apply_model(x_noisy, t_ori, condition_dic)
 
         loss_dict = {}
@@ -3764,7 +3777,9 @@ class LatentDiffusionCogAdapter(pl.LightningModule):
         if not hasattr(self, 'usm_sharpener'):
             usm_sharpener = USMSharp().cuda()  # do usm sharpening
 
-        im_gt = batch['gt'].cuda()
+        im_gt = batch['gt'].cuda()  # [B,C,H,W]
+
+
         if self.use_usm:
             im_gt = usm_sharpener(im_gt)
         im_gt = im_gt.to(memory_format=torch.contiguous_format).float()
@@ -3896,8 +3911,22 @@ class LatentDiffusionCogAdapter(pl.LightningModule):
         # clamp and round
         im_lq = torch.clamp(out, 0, 1.0)
 
+        # folder_path = '/data1/jianglei/coser_imagenet-1K_new_lr'
+        # for i in range(im_lq.size(0)):
+        #     img_tensor = im_lq[i]
+        #     img_numpy = img_tensor.permute(1,2,0).cpu().numpy()
+        #     img_numpy = (img_numpy * 255).astype(np.uint8)
+        #     img_numpy = cv2.cvtColor(img_numpy, cv2.COLOR_RGB2BGR)
+        #     file_name = os.path.basename(batch['gt_path'][i])
+        #     cv2.imwrite(os.path.join(folder_path,file_name),img_numpy)
+
+        # jpeg_files = [file for file in os.listdir(folder_path) if file.endswith('.JPEG')]
+        # if (len(jpeg_files) == 2000):
+        #     input('val lr data done ')
+
         # random crop
         gt_size = self.configs.degradation['gt_size']
+
         im_gt, im_lq = paired_random_crop(im_gt, im_lq, gt_size, self.configs.sf)
         self.lq, self.gt = im_lq, im_gt
         

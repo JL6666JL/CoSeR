@@ -7,10 +7,13 @@ import pandas as pd
 from tqdm import tqdm
 import random
 
-target_hr_path = ''
+# target_hr_path = '/data1/jianglei/coser_imagenet'
+target_hr_path = '/data1/jianglei/coser_imagenet_10'
+# target_hr_path = '/data1/jianglei/coser_imagenet-1K_new'
 os.makedirs(target_hr_path, exist_ok=True)
 
-imagenet_path = ''
+imagenet_path = '/data1/jianglei/imagenet_10'
+# imagenet_path = '/data1/jianglei/imagenet-1K/train'
 resolution = 512
 
 class_path = os.listdir(imagenet_path)
@@ -77,19 +80,36 @@ for i in img_path:
 print(len(val_list))
 print(len(train_list))
 
-os.makedirs("data/ImageNet/Obj512_all", exist_ok=True)
+# os.makedirs("data/ImageNet/Obj512_all", exist_ok=True)
 
-with open('data/ImageNet/Obj512_all/val.txt', 'w') as f:
+# with open('data/ImageNet/Obj512_all/val.txt', 'w') as f:
+#     for i in val_list:
+#         f.write(i+'\n')
+
+# with open('data/ImageNet/Obj512_all/train.txt', 'w') as f:
+#     for i in train_list:
+#         f.write(i+'\n')
+
+# all_list = val_list + train_list
+# random.shuffle(all_list)
+
+# with open('data/ImageNet/Obj512_all/all.txt', 'w') as f:
+#     for i in all_list:
+#         f.write(i+'\n')
+
+os.makedirs("data/ImageNet_10/Obj512_all", exist_ok=True)
+
+with open('data/ImageNet_10/Obj512_all/val.txt', 'w') as f:
     for i in val_list:
         f.write(i+'\n')
 
-with open('data/ImageNet/Obj512_all/train.txt', 'w') as f:
+with open('data/ImageNet_10/Obj512_all/train.txt', 'w') as f:
     for i in train_list:
         f.write(i+'\n')
 
 all_list = val_list + train_list
 random.shuffle(all_list)
 
-with open('data/ImageNet/Obj512_all/all.txt', 'w') as f:
+with open('data/ImageNet_10/Obj512_all/all.txt', 'w') as f:
     for i in all_list:
         f.write(i+'\n')

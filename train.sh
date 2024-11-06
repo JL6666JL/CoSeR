@@ -1,0 +1,1 @@
+python main.py --train --base configs/CoSeR/qformer_srresnet_imagenet_all.yaml --gpus 0,1 --name test

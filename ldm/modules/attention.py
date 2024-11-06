@@ -565,6 +565,32 @@ class SpatialTransformerV2d4(nn.Module):
             self.proj_out = zero_module(nn.Linear(in_channels, inner_dim))
         self.use_linear = use_linear
 
+    # def forward(self, x, context=None, lr_prompt=None):
+    #     # note: if no context is given, cross-attention defaults to self-attention
+    #     # if not isinstance(context, list):
+    #     #     context = [context]
+    #     b, c, h, w = x.shape
+    #     x_in = x
+    #     x = self.norm(x)
+    #     if not self.use_linear:
+    #         x = self.proj_in(x)
+    #     x = rearrange(x, 'b c h w -> b (h w) c').contiguous()
+    #     if self.use_linear:
+    #         x = self.proj_in(x)
+
+    #     if context is not None:
+    #         context = torch.cat([context, lr_prompt], 1)
+    #     else:
+    #         context = lr_promp
+        
+    #     for i, block in enumerate(self.transformer_blocks):
+    #         x = block(x, context=context)
+    #     if self.use_linear:
+    #         x = self.proj_out(x)
+    #     x = rearrange(x, 'b (h w) c -> b c h w', h=h, w=w).contiguous()
+    #     if not self.use_linear:
+    #         x = self.proj_out(x)
+    #     return x + x_in
     def forward(self, x, context=None, lr_prompt=None):
         # note: if no context is given, cross-attention defaults to self-attention
         # if not isinstance(context, list):
@@ -578,10 +604,10 @@ class SpatialTransformerV2d4(nn.Module):
         if self.use_linear:
             x = self.proj_in(x)
 
-        if context is not None:
-            context = torch.cat([context, lr_prompt], 1)
-        else:
-            context = lr_prompt
+        # if context is not None:
+        #     context = torch.cat([context, lr_prompt], 1)
+        # else:
+        #     context = lr_promp
         
         for i, block in enumerate(self.transformer_blocks):
             x = block(x, context=context)
@@ -673,6 +699,75 @@ class SpatialTransformerV8_refV5(nn.Module):
         
         self.use_linear = use_linear
 
+    # def forward(self, x, context=None, lr=None, lr_prompt=None, ref=None, gen_mode=False):
+    #     # note: if no context is given, cross-attention defaults to self-attention
+    #     # if not isinstance(context, list):
+    #     #     context = [context]
+    #     b, c, h, w = x.shape
+    #     x_in = x
+    #     x = self.norm(x)
+
+    #     if not self.use_linear:
+    #         x = self.proj_in(x)
+        
+    #     x = rearrange(x, 'b c h w -> b (h w) c').contiguous()
+
+    #     if self.use_linear:
+    #         x = self.proj_in(x)
+
+    #     if not gen_mode:
+    #         if lr is not None and self.use_lr:
+    #             if self.dubch:
+    #                 x_c = self.norm_clr_lna(self.dubconv_lna(lr))
+    #             else:
+    #                 if self.merge_x2:
+    #                     x_c = self.norm_clr_lna(self.avgpool_clr(lr))
+    #                 else:
+    #                     x_c = self.norm_clr_lna(lr)
+    #             if not self.use_linear:
+    #                 x_c = self.proj_in_clr_lna(x_c)
+    #             x_c = rearrange(x_c, 'b c h w -> b (h w) c').contiguous()
+    #             if self.use_linear:
+    #                 x_c = self.proj_in_clr_lna(x_c)
+    #         else:
+    #             x_c = None
+
+    #         if self.dubch:
+    #             ref_c = self.norm_cref_lna(self.dubconv_r_lna(ref))
+    #         else:
+    #             if self.merge_x2:
+    #                 ref_c = self.norm_cref_lna(self.avgpool_cref(ref))
+    #             else:
+    #                 ref_c = self.norm_cref_lna(ref)
+    #         ref_c = rearrange(ref_c, 'b c h w -> b (h w) c').contiguous()
+    #         if not self.use_linear:
+    #             ref_c = self.proj_in_cref_lna(ref_c)
+
+    #         if context is not None:
+    #             context = torch.cat((context, lr_prompt), 1)
+    #         else:
+    #             context = lr_prompt
+
+    #         for i, block in enumerate(self.transformer_blocks):
+    #             x = block(x, context=context, lr=x_c, ref=ref_c, h=h, w=w)
+    #     else:
+    #         x_c = None
+    #         ref_c = None
+    #         if context is not None:
+    #             context = torch.cat((context, lr_prompt), 1)
+    #         else:
+    #             context = lr_prompt
+
+    #         for i, block in enumerate(self.transformer_blocks):
+    #             x = block(x, context=context, lr=x_c, ref=ref_c, h=h, w=w, gen_mode=gen_mode)
+
+    #     if self.use_linear:
+    #         x = self.proj_out(x)
+    #     x = rearrange(x, 'b (h w) c -> b c h w', h=h, w=w).contiguous()
+    #     if not self.use_linear:
+    #         x = self.proj_out(x)
+
+    #     return x + x_in
     def forward(self, x, context=None, lr=None, lr_prompt=None, ref=None, gen_mode=False):
         # note: if no context is given, cross-attention defaults to self-attention
         # if not isinstance(context, list):
@@ -717,20 +812,20 @@ class SpatialTransformerV8_refV5(nn.Module):
             if not self.use_linear:
                 ref_c = self.proj_in_cref_lna(ref_c)
 
-            if context is not None:
-                context = torch.cat((context, lr_prompt), 1)
-            else:
-                context = lr_prompt
+            # if context is not None:
+            #     context = torch.cat((context, lr_prompt), 1)
+            # else:
+            #     context = lr_prompt
 
             for i, block in enumerate(self.transformer_blocks):
                 x = block(x, context=context, lr=x_c, ref=ref_c, h=h, w=w)
         else:
             x_c = None
             ref_c = None
-            if context is not None:
-                context = torch.cat((context, lr_prompt), 1)
-            else:
-                context = lr_prompt
+            # if context is not None:
+            #     context = torch.cat((context, lr_prompt), 1)
+            # else:
+            #     context = lr_prompt
 
             for i, block in enumerate(self.transformer_blocks):
                 x = block(x, context=context, lr=x_c, ref=ref_c, h=h, w=w, gen_mode=gen_mode)

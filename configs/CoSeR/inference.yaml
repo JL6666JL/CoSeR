@@ -19,7 +19,7 @@ model:
     scale_factor: 0.18215
     use_ema: False
     # for training only
-    ckpt_path: PATH_FOR_SD
+    ckpt_path: /home/jianglei/work/CoSeR/ckpt/v2-1_512-ema-pruned.ckpt
     unfrozen_diff: False
     random_size: False
     time_replace: 1000
@@ -34,7 +34,7 @@ model:
     fixed_cond: True
 
     # Fill in the path of trained cognitive encoder weights here.
-    pretrained_presr_qformer_path: PATH_FOR_QFORMER
+    pretrained_presr_qformer_path: /home/jianglei/work/CoSeR/ckpt/state_dict_qformer.pt
 
     unet_config:
       target: ldm.modules.diffusionmodules.openaimodel.UNetModelAiA
@@ -60,7 +60,7 @@ model:
       target: ldm.models.autoencoder.AutoencoderKL
       params:
         # for training only
-        ckpt_path: PATH_FOR_SD
+        ckpt_path: /home/jianglei/work/CoSeR/ckpt/v2-1_512-ema-pruned.ckpt
         embed_dim: 4
         monitor: val/rec_loss
         ddconfig:
