@@ -349,8 +349,9 @@ def main():
 
 							# generate noise map
 							noise = torch.randn_like(init_latent)
-							t = repeat(torch.tensor([999]), '1 -> b', b=im_lq_pch.size(0))
+							t = repeat(torch.tensor([999]), '1 -> b', b=im_lq_pch.size(0))	# 生成有b个999的tensor，这里表明有1000步
 							t = t.to(device).long()
+							# 添加t步的噪声
 							x_T = model.q_sample_respace(x_start=init_latent, t=t, sqrt_alphas_cumprod=sqrt_alphas_cumprod, sqrt_one_minus_alphas_cumprod=sqrt_one_minus_alphas_cumprod, noise=noise)
 
 							# reference image generation
@@ -388,8 +389,9 @@ def main():
 
 						# generate noise map
 						noise = torch.randn_like(init_latent)
-						t = repeat(torch.tensor([999]), '1 -> b', b=im_lq_bs.size(0))
+						t = repeat(torch.tensor([999]), '1 -> b', b=im_lq_bs.size(0))	# 1000个时间步
 						t = t.to(device).long()
+						# 添加t步的噪声
 						x_T = model.q_sample_respace(x_start=init_latent, t=t, sqrt_alphas_cumprod=sqrt_alphas_cumprod, sqrt_one_minus_alphas_cumprod=sqrt_one_minus_alphas_cumprod, noise=noise)
 
 						# reference image generation

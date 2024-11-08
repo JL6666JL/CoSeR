@@ -15,7 +15,7 @@ from detectron2.config import get_cfg
 from detectron2.utils.visualizer import Visualizer
 from detectron2.data import MetadataCatalog, DatasetCatalog
 
-im = cv2.imread("/home/jianglei/work/CoSeR/test/ball_dog.png")
+im = cv2.imread("/home/jianglei/work/CoSeR/test/n01537544_31.JPEG")
 cfg = get_cfg()
 # add project-specific config (e.g., TensorMask) here if you're not running a model in detectron2's core library
 # cfg.merge_from_file(model_zoo.get_config_file("COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_3x.yaml"))
@@ -34,6 +34,7 @@ out = v.draw_instance_predictions(outputs["instances"].to("cpu"))
 cv2.imwrite('dectron.png',out.get_image()[:, :, ::-1])
 
 print(outputs['panoptic_seg'][1])
+print(outputs['instances'])
 predicted_labels = np.argmax(outputs['sem_seg'].cpu(),axis=0)
 
 H,W = predicted_labels.shape

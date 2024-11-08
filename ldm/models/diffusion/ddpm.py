@@ -402,6 +402,7 @@ class DDPM(pl.LightningModule):
         return (extract_into_tensor(self.sqrt_alphas_cumprod, t, x_start.shape) * x_start +
                 extract_into_tensor(self.sqrt_one_minus_alphas_cumprod, t, x_start.shape) * noise)
 
+    # 生成第t步的噪声组合
     def q_sample_respace(self, x_start, t, sqrt_alphas_cumprod, sqrt_one_minus_alphas_cumprod, noise=None):
         noise = default(noise, lambda: torch.randn_like(x_start))
         return (extract_into_tensor(sqrt_alphas_cumprod.to(noise.device), t, x_start.shape) * x_start +
@@ -2650,7 +2651,7 @@ class LatentDiffusionCogSR(DDPM):
     # x_start是HR图像，z_gt是LR图像(这里的gt是从扩散模型的角度出发的)
     def p_losses(self, x_start, condition_dic, t, t_ori, z_gt, pre_sr_loss, clip_adapt_loss, noise=None):
         noise = default(noise, lambda: torch.randn_like(x_start))   # noise为None的时候生成随机噪声
-        x_noisy = self.q_sample(x_start=x_start, t=t, noise=noise)  # 生成第t步的噪声
+        x_noisy = self.q_sample(x_start=x_start, t=t, noise=noise)  # 生成第t步的噪声图像
 
         if self.mix_ratio > 0:
             if random.random() < self.mix_ratio:
@@ -2673,10 +2674,13 @@ class LatentDiffusionCogSR(DDPM):
         loss_dict = {}
         prefix = 'train' if self.training else 'val'
 
+        # x0表示图像预测
         if self.parameterization == "x0":
             target = x_start
+        # eps表示噪声预测
         elif self.parameterization == "eps":
             target = noise
+        # v表示速度预测，速度向量v结合了噪声和图像的信息。是介于x0和eps之间的一种方式
         elif self.parameterization == "v":
             target = self.get_v(x_start, noise, t)
         else:
@@ -2752,6 +2756,8 @@ class LatentDiffusionCogSR(DDPM):
             x_recon.clamp_(-1., 1.)
         if quantize_denoised:
             x_recon, _, [_, _, indices] = self.first_stage_model.quantize(x_recon)
+
+        # 获得均值、方差、方差的对数
         model_mean, posterior_variance, posterior_log_variance = self.q_posterior(x_start=x_recon, x_t=x, t=t)
         if return_codebook_ids:
             return model_mean, posterior_variance, posterior_log_variance, logits

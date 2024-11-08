@@ -472,6 +472,7 @@ class RealESRGANCapRefDataset(data.Dataset):
             ref_filenames_selected = ref_filenames_numpy[sortindex][-self.reference_select_num:]
             ref_sim_selected = ref_sim[sortindex][-self.reference_select_num:]
 
+            # 直接从gt中选了根据相似度选了一张图片？？？
             ref_filename_selected = np.random.choice(ref_filenames_selected, p=ref_sim_selected / np.sum(ref_sim_selected))
 
             img_bytes = self.file_client.get(os.path.join(self.opt['gt_path'], ref_filename_selected), 'gt')

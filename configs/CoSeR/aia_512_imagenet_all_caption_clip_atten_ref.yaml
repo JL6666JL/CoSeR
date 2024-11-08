@@ -59,7 +59,7 @@ model:
     first_stage_config:
       target: ldm.models.autoencoder.AutoencoderKL
       params:
-        # for training only
+        # for training only, stable-diffusion-2-1
         ckpt_path: /home/jianglei/work/CoSeR/ckpt/v2-1_512-ema-pruned.ckpt
         embed_dim: 4
         monitor: val/rec_loss

@@ -5,12 +5,19 @@ from detectron2 import model_zoo
 from detectron2.data.detection_utils import read_image
 import os
 from tqdm import tqdm  # 导入 tqdm
+import numpy as np
 
 # 配置模型
+# cfg = get_cfg()
+# cfg.merge_from_file(model_zoo.get_config_file("COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_3x.yaml"))
+# cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST = 0.5  # 设定阈值
+# cfg.MODEL.WEIGHTS = model_zoo.get_checkpoint_url("COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_3x.yaml")
+# predictor = DefaultPredictor(cfg)
+
 cfg = get_cfg()
-cfg.merge_from_file(model_zoo.get_config_file("COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_3x.yaml"))
-cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST = 0.5  # 设定阈值
-cfg.MODEL.WEIGHTS = model_zoo.get_checkpoint_url("COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_3x.yaml")
+cfg.merge_from_file(model_zoo.get_config_file("COCO-InstanceSegmentation/mask_rcnn_X_101_32x8d_FPN_3x.yaml"))
+cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST = 0.5  # 设置预测阈值
+cfg.MODEL.WEIGHTS = model_zoo.get_checkpoint_url("COCO-InstanceSegmentation/mask_rcnn_X_101_32x8d_FPN_3x.yaml")
 predictor = DefaultPredictor(cfg)
 
 def is_image_segmentable(image_path):
@@ -19,7 +26,10 @@ def is_image_segmentable(image_path):
     outputs = predictor(image)
     # 检查是否存在实例分割结果
     if "instances" in outputs and len(outputs["instances"]) > 0:
-        return True
+        scores = outputs["instances"].scores.cpu().numpy()
+        # 检查是否有至少一个分数大于0.8
+        if np.any(scores > 0.7):
+            return True
     return False
 
 def calculate_segmentable_ratio(dataset_dir):
@@ -38,7 +48,8 @@ def calculate_segmentable_ratio(dataset_dir):
     return segmentable_count / total_images
 
 # 示例用法
-dataset_dir = "/data1/jianglei/coser_imagenet-1K_new"  # 替换为数据集路径
+# dataset_dir = "/data1/jianglei/coser_imagenet-1K_new"  # 替换为数据集路径
+dataset_dir = "/data1/jianglei/coser_imagenet_10"  # 替换为数据集路径
 output_file = "segmentable_ratio.txt"  # 输出文件名
 
 ratio = calculate_segmentable_ratio(dataset_dir)
