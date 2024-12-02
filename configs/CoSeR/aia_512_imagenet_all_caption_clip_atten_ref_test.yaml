@@ -19,7 +19,7 @@ model:
     scale_factor: 0.18215
     use_ema: False
     # for training only
-    ckpt_path: /home/jianglei/work1/CoSeR250/ckpt/v2-1_512-ema-pruned.ckpt
+    ckpt_path: /home/jianglei/work/CoSeR/ckpt/v2-1_512-ema-pruned.ckpt
     unfrozen_diff: False
     random_size: False
     time_replace: 1000
@@ -34,7 +34,7 @@ model:
     fixed_cond: True
 
     # Fill in the path of trained cognitive encoder weights here.
-    pretrained_presr_qformer_path: /home/jianglei/work1/CoSeR250/ckpt/state_dict_qformer.pt
+    pretrained_presr_qformer_path: /home/jianglei/work/CoSeR/ckpt/state_dict_qformer.pt
 
     unet_config:
       target: ldm.modules.diffusionmodules.openaimodel.UNetModelAiA
@@ -59,8 +59,8 @@ model:
     first_stage_config:
       target: ldm.models.autoencoder.AutoencoderKL
       params:
-        # for training only
-        ckpt_path: /home/jianglei/work1/CoSeR250/ckpt/v2-1_512-ema-pruned.ckpt
+        # for training only, stable-diffusion-2-1
+        ckpt_path: /home/jianglei/work/CoSeR/ckpt/v2-1_512-ema-pruned.ckpt
         embed_dim: 4
         monitor: val/rec_loss
         ddconfig:
@@ -153,7 +153,7 @@ data:
       target: basicsr.data.realesrgan_dataset.RealESRGANCapRefDataset
       params:
         queue_size: 180
-        gt_path: /data2/jianglei/coser_imagenet_10
+        gt_path: /data1/jianglei/coser_imagenet-1K_new 
         meta_info: data/ImageNet/Obj512_all/train.txt
         caption_path: data/ImageNet/Obj512_all/blip2_imagenet_captions_all.json
         reference_path: data/ImageNet/Obj512_all/imagenet_all_clipcls.pkl
@@ -187,41 +187,20 @@ data:
         use_rot: False
         
     validation:
-      target: basicsr.data.realesrgan_dataset.RealESRGANCapRefDataset
+      target: basicsr.data.paired_image_dataset.PairedImageCapRefDataset
       params:
-        queue_size: 180
-        gt_path: /data2/jianglei/coser_imagenet_10
+        dataroot_gt: /data1/jianglei/coser_imagenet-1K_new
+        dataroot_lq: /data1/jianglei/coser_imagenet-1K_new_lr
         meta_info: data/ImageNet/Obj512_all/val.txt
         caption_path: data/ImageNet/Obj512_all/blip2_imagenet_captions_all.json
         reference_path: data/ImageNet/Obj512_all/imagenet_all_clipcls.pkl
         reference_select_num: 10
         drop_rate: 0
-        image_type: JPEG
-        crop_size: 512
+        gt_size: 512
+        scale: 4
+        phase: val
         io_backend:
           type: disk
-
-        blur_kernel_size: 21
-        kernel_list: ['iso', 'aniso', 'generalized_iso', 'generalized_aniso', 'plateau_iso', 'plateau_aniso']
-        kernel_prob: [0.45, 0.25, 0.12, 0.03, 0.12, 0.03]
-        sinc_prob: 0.1
-        blur_sigma: [0.2, 1.5]
-        betag_range: [0.5, 2.0]
-        betap_range: [1, 1.5]
-
-        blur_kernel_size2: 11
-        kernel_list2: ['iso', 'aniso', 'generalized_iso', 'generalized_aniso', 'plateau_iso', 'plateau_aniso']
-        kernel_prob2: [0.45, 0.25, 0.12, 0.03, 0.12, 0.03]
-        sinc_prob2: 0.1
-        blur_sigma2: [0.2, 1.0]
-        betag_range2: [0.5, 2.0]
-        betap_range2: [1, 1.5]
-
-        final_sinc_prob: 0.8
-
-        gt_size: 512
-        use_hflip: True
-        use_rot: False
 
 lightning:
   modelcheckpoint:

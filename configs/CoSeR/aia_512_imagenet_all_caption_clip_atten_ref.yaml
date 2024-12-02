@@ -146,8 +146,7 @@ degradation:
 data:
   target: main.DataModuleFromConfig
   params:
-    # batch_size: 4
-    batch_size: 1
+    batch_size: 4
     num_workers: 6
     wrap: false
     train:
@@ -222,8 +221,3 @@ lightning:
     accumulate_grad_batches: 6
     limit_val_batches: 1.0
     num_sanity_val_steps: -1
-
-# logger:
-#   print_freq: 100      
-#   save_checkpoint: false  
-#   save_checkpoint_freq: 5000  

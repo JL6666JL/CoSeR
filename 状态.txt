@@ -1,0 +1,2 @@
+2024.11.19
+目前的代码是删除cognitive embedding之后的。

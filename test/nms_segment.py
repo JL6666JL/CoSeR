@@ -35,7 +35,7 @@ cfg.MODEL.WEIGHTS = model_zoo.get_checkpoint_url("COCO-InstanceSegmentation/mask
 predictor = DefaultPredictor(cfg)
 
 # 2. 读取图片并进行分割
-image = cv2.imread("/home/jianglei/work/CoSeR/test/n01537544_31.JPEG")
+image = cv2.imread("/home/jianglei/work/CoSeR/test/ball_dog.png")
 image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 outputs = predictor(image)
 
@@ -80,3 +80,8 @@ for i, mask in enumerate(selected_masks):
     
     # 保存图像，文件名包含类别名称
     Image.fromarray(resized_img).save(f"segmented_object_{class_name}_{i}.JPEG")
+     # 将mask转换为二值图像（黑白图像），并保存
+    mask_img = (mask * 255).astype(np.uint8)
+    cropped_mask = mask_img[y1:y2, x1:x2]
+    resized_mask = cv2.resize(cropped_mask, output_size)
+    Image.fromarray(resized_mask).save(f"mask_object_{class_name}_{i}.PNG")

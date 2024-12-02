@@ -2418,7 +2418,6 @@ class LatentDiffusionCogSR(DDPM):
             else:
                 return self.first_stage_model.decode(z)
 
-
     # same as above but without decorator
     def differentiable_decode_first_stage(self, z, predict_cids=False, force_not_quantize=False):
         if predict_cids:
@@ -2545,7 +2544,7 @@ class LatentDiffusionCogSR(DDPM):
                 c = self.q_sample(x_start=c, t=tc, noise=torch.randn_like(c.float()))
 
         # clip image embedding
-        image_c = self.pre_sr_model(self.lq_clip)  # 先用垃圾一点的预训练超分模型超分一下
+        image_c = self.pre_sr_model(self.lq_clip)  # 先用垃圾一点的预训练超分模型超分一下，self.lq_clip是LR image
         gt_resize = F.interpolate((self.gt+1.0)/2, size=(image_c.size(-2), image_c.size(-1)), mode='bicubic')
         pre_sr_loss = (gt_resize - image_c).abs().mean()
 

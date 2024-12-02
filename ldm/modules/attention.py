@@ -581,7 +581,7 @@ class SpatialTransformerV2d4(nn.Module):
     #     if context is not None:
     #         context = torch.cat([context, lr_prompt], 1)
     #     else:
-    #         context = lr_promp
+    #         context = lr_prompt
         
     #     for i, block in enumerate(self.transformer_blocks):
     #         x = block(x, context=context)
@@ -607,7 +607,7 @@ class SpatialTransformerV2d4(nn.Module):
         # if context is not None:
         #     context = torch.cat([context, lr_prompt], 1)
         # else:
-        #     context = lr_promp
+        #     context = lr_prompt
         
         for i, block in enumerate(self.transformer_blocks):
             x = block(x, context=context)
